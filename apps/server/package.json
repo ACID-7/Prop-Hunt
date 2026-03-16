@@ -7,8 +7,9 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@colyseus/core": "^0.15.20",
-    "@colyseus/ws-transport": "^0.15.11",
+    "@colyseus/core": "^0.17.0",
+    "@colyseus/schema": "^4.0.17",
+    "@colyseus/ws-transport": "^0.17.9",
     "@prop-hunt/shared": "*",
     "cors": "^2.8.5",
     "express": "^4.19.2"

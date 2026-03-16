@@ -3,7 +3,7 @@ import {
   type,
   MapSchema,
   ArraySchema,
-} from "@colyseus/core";
+} from "@colyseus/schema";
 import {
   ROLE_PROP,
   ROLE_HUNTER,

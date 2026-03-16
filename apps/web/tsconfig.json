@@ -1,12 +1,24 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "moduleResolution": "bundler",
     "module": "esnext",
     "paths": {
-      "@prop-hunt/shared": ["../../packages/shared/src/index.ts"]
-    }
+      "@prop-hunt/shared": [
+        "../../packages/shared/src/index.ts"
+      ]
+    },
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "isolatedModules": true
   },
-  "include": ["src", "next.config.js"]
+  "include": [
+    "src",
+    "next.config.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
