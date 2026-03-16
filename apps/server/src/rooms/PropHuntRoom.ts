@@ -18,17 +18,18 @@ import {
   MAX_PLAYERS,
 } from "@prop-hunt/shared";
 
-export class PropHuntRoom extends Room<GameRoomState> {
+export class PropHuntRoom extends Room {
   maxClients = MAX_PLAYERS;
 
   // Track last tick time per player for movement interpolation
   private lastTickTime: Map<string, number> = new Map();
-  private gameLoop: GameLoop;
+  private gameLoop!: GameLoop;
 
   onCreate() {
-    this.setState(new GameRoomState());
+    const state = new GameRoomState();
+    this.setState(state);
     this.gameLoop = new GameLoop((type, msg) => this.broadcast(type, msg));
-    this.gameLoop.start(this.state);
+    this.gameLoop.start(state);
 
     this.onMessage("*", (client, message: ClientMessage) => {
       this.handleMessage(client, message);
@@ -41,19 +42,21 @@ export class PropHuntRoom extends Room<GameRoomState> {
   }
 
   onJoin(client: Client, options: { name?: string }) {
+    const state = this.state as GameRoomState;
     const player = new PlayerState();
     player.sessionId = client.sessionId;
     player.name = options?.name ?? `Player_${client.sessionId.slice(0, 4)}`;
     player.x = 400 + Math.random() * 100;
     player.y = 300 + Math.random() * 100;
-    this.state.players.set(client.sessionId, player);
+    state.players.set(client.sessionId, player);
     this.lastTickTime.set(client.sessionId, Date.now());
 
     console.log(`[Room] ${client.sessionId} joined as ${player.name}`);
   }
 
   onLeave(client: Client) {
-    this.state.players.delete(client.sessionId);
+    const state = this.state as GameRoomState;
+    state.players.delete(client.sessionId);
     this.lastTickTime.delete(client.sessionId);
     console.log(`[Room] ${client.sessionId} left`);
   }
@@ -64,7 +67,8 @@ export class PropHuntRoom extends Room<GameRoomState> {
   }
 
   private handleMessage(client: Client, message: ClientMessage) {
-    const player = this.state.players.get(client.sessionId);
+    const state = this.state as GameRoomState;
+    const player = state.players.get(client.sessionId);
     if (!player) return;
 
     switch (message.type) {
@@ -95,10 +99,11 @@ export class PropHuntRoom extends Room<GameRoomState> {
   }
 
   private simulationTick(deltaTime: number) {
-    const phase = this.state.phase;
+    const state = this.state as GameRoomState;
+    const phase = state.phase;
     if (phase !== PHASE_HIDING && phase !== PHASE_HUNTING) return;
 
-    this.state.players.forEach((player, sessionId) => {
+    state.players.forEach((player: PlayerState, sessionId: string) => {
       if (!player.isAlive) return;
       const vel = this.velocities.get(sessionId);
       if (!vel || (vel.vx === 0 && vel.vy === 0)) return;
@@ -110,16 +115,17 @@ export class PropHuntRoom extends Room<GameRoomState> {
   }
 
   private handleReady(client: Client, player: PlayerState) {
-    if (this.state.phase !== PHASE_LOBBY) return;
+    const state = this.state as GameRoomState;
+    if (state.phase !== PHASE_LOBBY) return;
     player.isReady = !player.isReady;
 
     // Check if all players are ready
-    const players = Array.from(this.state.players.values());
+    const players = Array.from(state.players.values() as Iterable<PlayerState>);
     if (
       players.length >= MIN_PLAYERS_TO_START &&
       players.every((p) => p.isReady)
     ) {
-      this.gameLoop.startCountdown(this.state);
+      this.gameLoop.startCountdown(state);
     }
   }
 
@@ -128,7 +134,8 @@ export class PropHuntRoom extends Room<GameRoomState> {
     player: PlayerState,
     objectId: string | null
   ) {
-    const phase = this.state.phase;
+    const state = this.state as GameRoomState;
+    const phase = state.phase;
     if (phase !== PHASE_HIDING && phase !== PHASE_HUNTING) return;
     if (player.role !== ROLE_PROP) return;
 
@@ -167,7 +174,8 @@ export class PropHuntRoom extends Room<GameRoomState> {
   }
 
   private handleAttack(client: Client, player: PlayerState) {
-    if (this.state.phase !== PHASE_HUNTING) return;
+    const state = this.state as GameRoomState;
+    if (state.phase !== PHASE_HUNTING) return;
     if (player.role !== ROLE_HUNTER) return;
 
     const now = Date.now();
@@ -181,7 +189,7 @@ export class PropHuntRoom extends Room<GameRoomState> {
     let closestProp: PlayerState | null = null;
     let closestDist = HUNTER_ATTACK_RANGE;
 
-    this.state.players.forEach((target) => {
+    state.players.forEach((target: PlayerState) => {
       if (target.role !== ROLE_PROP || !target.isAlive) return;
       const dist = Math.hypot(player.x - target.x, player.y - target.y);
       if (dist < closestDist) {
@@ -211,12 +219,13 @@ export class PropHuntRoom extends Room<GameRoomState> {
   }
 
   private handleRematch(client: Client, player: PlayerState) {
-    if (this.state.phase !== PHASE_ROUND_END && this.state.phase !== PHASE_LOBBY) return;
+    const state = this.state as GameRoomState;
+    if (state.phase !== PHASE_ROUND_END && state.phase !== PHASE_LOBBY) return;
     player.isReady = true;
 
-    const players = Array.from(this.state.players.values());
+    const players = Array.from(state.players.values() as Iterable<PlayerState>);
     if (players.length >= MIN_PLAYERS_TO_START && players.every((p) => p.isReady)) {
-      this.gameLoop.startCountdown(this.state);
+      this.gameLoop.startCountdown(state);
     }
   }
 }

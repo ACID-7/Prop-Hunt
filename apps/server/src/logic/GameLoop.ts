@@ -14,7 +14,7 @@ import {
   MAP_WIDTH,
   MAP_HEIGHT,
 } from "@prop-hunt/shared";
-import { ArraySchema } from "@colyseus/core";
+import { ArraySchema } from "@colyseus/schema";
 
 // Callback type for broadcasting events from room
 type BroadcastFn = (type: string, message: unknown) => void;
