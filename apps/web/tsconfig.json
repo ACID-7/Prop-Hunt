@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "paths": {
+      "@prop-hunt/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["src", "next.config.js"]
+}
