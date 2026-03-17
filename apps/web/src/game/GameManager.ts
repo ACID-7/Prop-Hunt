@@ -13,6 +13,9 @@ export function launchGame(
   sessionId: string,
   onStateChange: (snapshot: unknown) => void
 ): void {
+  if (typeof window === "undefined") {
+    return;
+  }
   if (game) {
     game.destroy(true);
     game = null;

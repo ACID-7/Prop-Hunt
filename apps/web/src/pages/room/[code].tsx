@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
 import * as Colyseus from "colyseus.js";
-import { launchGame, destroyGame } from "../../game/GameManager";
 import Lobby from "../../components/Lobby";
 import HUD from "../../components/HUD";
 import RoundResult from "../../components/RoundResult";
@@ -86,7 +84,9 @@ export default function RoomPage() {
 
         room.onError((code, msg) => setError(`Error ${code}: ${msg}`));
         room.onLeave(() => {
-          destroyGame();
+          import("../../game/GameManager").then(({ destroyGame }) => {
+            destroyGame();
+          });
           router.push("/");
         });
       })
@@ -95,7 +95,9 @@ export default function RoomPage() {
       });
 
     return () => {
-      destroyGame();
+      import("../../game/GameManager").then(({ destroyGame }) => {
+        destroyGame();
+      });
       roomRef.current?.leave();
     };
   }, [code]);
@@ -104,17 +106,26 @@ export default function RoomPage() {
   useEffect(() => {
     if (!gameActive || !gameContainerRef.current || !roomRef.current) return;
 
-    launchGame(
-      gameContainerRef.current,
-      roomRef.current,
-      sessionId,
-      (snapshot) => setHudSnapshot(snapshot as HudSnapshot)
-    );
+    let mounted = true;
+
+    (async () => {
+      const { launchGame } = await import("../../game/GameManager");
+      if (!mounted) return;
+      launchGame(
+        gameContainerRef.current!,
+        roomRef.current!,
+        sessionId,
+        (snapshot) => setHudSnapshot(snapshot as HudSnapshot)
+      );
+    })();
 
     return () => {
-      destroyGame();
+      mounted = false;
+      import("../../game/GameManager").then(({ destroyGame }) => {
+        destroyGame();
+      });
     };
-  }, [gameActive]);
+  }, [gameActive, sessionId]);
 
   const sendReady = () => roomRef.current?.send("ready", {});
   const sendRematch = () => roomRef.current?.send("rematch", {});
@@ -196,15 +207,5 @@ export default function RoomPage() {
       )}
     </div>
   );
-}
-
-import { useRouter } from "next/router";
-import { Lobby } from "../../components/Lobby";
-
-export default function RoomPage() {
-  const router = useRouter();
-  const { code } = router.query;
-
-  return <Lobby roomCode={typeof code === "string" ? code : ""} />;
 }
 
